@@ -19,6 +19,45 @@
         .loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; }
         .edit-btn { cursor: pointer; color: blue; text-decoration: underline; }
         .edit-btn:hover { color: darkblue; }
+
+        /* Modal styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 1; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgb(0,0,0); /* Fallback color */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 5px;
+        }
+
+        .close-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close-btn:hover,
+        .close-btn:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -39,27 +78,33 @@
         </tbody>
     </table>
     
-    <h2>Update User</h2>
-    <form id="updateForm">
-        <input type="hidden" id="userId">
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username">
-        
-        <label for="email">Email:</label>
-        <input type="email" id="email" name="email">
-        
-        <label for="currentPassword">Current Password:</label>
-        <input type="password" id="currentPassword" name="currentPassword">
-        
-        <label for="newPassword">New Password:</label>
-        <input type="password" id="newPassword" name="newPassword">
-        
-        <label for="confirmNewPassword">Confirm New Password:</label>
-        <input type="password" id="confirmNewPassword" name="confirmNewPassword">
-        
-        <input type="submit" value="Update">
-        <div class="loading">Updating...</div>
-    </form>
+    <!-- Modal Structure -->
+    <div id="updateModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>Update User</h2>
+            <form id="updateForm">
+                <input type="hidden" id="userId">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username">
+
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email">
+
+                <label for="currentPassword">Current Password:</label>
+                <input type="password" id="currentPassword" name="currentPassword">
+
+                <label for="newPassword">New Password:</label>
+                <input type="password" id="newPassword" name="newPassword">
+
+                <label for="confirmNewPassword">Confirm New Password:</label>
+                <input type="password" id="confirmNewPassword" name="confirmNewPassword">
+
+                <input type="submit" value="Update">
+                <div class="loading">Updating...</div>
+            </form>
+        </div>
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -99,70 +144,84 @@
             .catch(error => {
                 document.getElementById('userTable').innerHTML = `<tr><td colspan="4">An error occurred: ${error.message}</td></tr>`;
             });
-        });
 
-        document.getElementById('userTable').addEventListener('click', function(event) {
-            if (event.target.classList.contains('edit-btn')) {
-                const row = event.target.closest('tr');
-                const id = event.target.dataset.id;
-                const username = row.cells[1].textContent;
-                const email = row.cells[2].textContent;
-                
-                document.getElementById('userId').value = id;
-                document.getElementById('username').value = username;
-                document.getElementById('email').value = email;
-                
-                // Optionally, store user ID in form or somewhere else if needed
-            }
-        });
+            const modal = document.getElementById('updateModal');
+            const closeBtn = document.querySelector('.close-btn');
 
-        document.getElementById('updateForm').addEventListener('submit', function(event) {
-            event.preventDefault(); // Prevent the default form submission
+            document.getElementById('userTable').addEventListener('click', function(event) {
+                if (event.target.classList.contains('edit-btn')) {
+                    const row = event.target.closest('tr');
+                    const id = event.target.dataset.id;
+                    const username = row.cells[1].textContent;
+                    const email = row.cells[2].textContent;
 
-            const token = localStorage.getItem('token'); // Get token from local storage
-            if (!token) {
-                alert('You must log in first.');
-                window.location.href = 'login.html';
-                return;
-            }
+                    document.getElementById('userId').value = id;
+                    document.getElementById('username').value = username;
+                    document.getElementById('email').value = email;
 
-            const id = document.getElementById('userId').value;
-            const username = document.getElementById('username').value;
-            const email = document.getElementById('email').value;
-            const currentPassword = document.getElementById('currentPassword').value;
-            const newPassword = document.getElementById('newPassword').value;
-            const confirmNewPassword = document.getElementById('confirmNewPassword').value;
-
-            // Simple client-side validation
-            if (newPassword !== confirmNewPassword) {
-                alert('New passwords do not match.');
-                return;
-            }
-
-            const loading = document.querySelector('.loading');
-            loading.style.display = 'block';
-
-            fetch('data_management.php', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ id, username, email, currentPassword, newPassword })
-            })
-            .then(response => response.json())
-            .then(result => {
-                loading.style.display = 'none';
-                if (result.status === 200) {
-                    alert('User data updated successfully.');
-                    window.location.reload(); // Reload page to refresh user data
-                } else {
-                    alert(`Error: ${result.message}`);
+                    modal.style.display = 'block'; // Show the modal
                 }
-            })
-            .catch(error => {
-                loading.style.display = 'none';
-                alert('An error occurred: ' + error.message);
+            });
+
+            closeBtn.addEventListener('click', function() {
+                modal.style.display = 'none'; // Hide the modal
+            });
+
+            window.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    modal.style.display = 'none'; // Hide the modal if clicking outside
+                }
+            });
+
+            document.getElementById('updateForm').addEventListener('submit', function(event) {
+                event.preventDefault(); // Prevent the default form submission
+
+                const token = localStorage.getItem('token'); // Get token from local storage
+                if (!token) {
+                    alert('You must log in first.');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const id = document.getElementById('userId').value;
+                const username = document.getElementById('username').value;
+                const email = document.getElementById('email').value;
+                const currentPassword = document.getElementById('currentPassword').value;
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+
+                // Simple client-side validation
+                if (newPassword !== confirmNewPassword) {
+                    alert('New passwords do not match.');
+                    return;
+                }
+
+                const loading = document.querySelector('.loading');
+                loading.style.display = 'block';
+
+                fetch('data_management.php', {
+                    method: 'POST', // Use POST for updates
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ id, username, email, currentPassword, newPassword })
+                })
+                .then(response => response.json())
+                .then(result => {
+                    loading.style.display = 'none';
+                    if (result.status === 200) {
+                        alert('User data updated successfully.');
+                        modal.style.display = 'none'; // Hide the modal
+                        window.location.reload(); // Reload page to refresh user data
+                    } else {
+                        alert(`Error: ${result.message}`);
+                    }
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    alert('An error occurred: ' + error.message);
+                });
             });
         });
     </script>

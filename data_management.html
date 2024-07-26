@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Management</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { padding: 10px; text-align: left; border: 1px solid #ddd; }
+        th { background-color: #f4f4f4; }
+        form { max-width: 400px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        label { display: block; margin-bottom: 8px; }
+        input[type="text"], input[type="email"], input[type="password"], input[type="submit"] { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box; }
+        input[type="submit"] { background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        input[type="submit"]:hover { background-color: #45a049; }
+        .error { color: red; margin-bottom: 10px; }
+        .success { color: green; margin-bottom: 10px; }
+        .loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; }
+        .edit-btn { cursor: pointer; color: blue; text-decoration: underline; }
+        .edit-btn:hover { color: darkblue; }
+    </style>
+</head>
+<body>
+    <h1>Data Management</h1>
+    
+    <h2>User List</h2>
+    <table id="userTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- User rows will be added here -->
+        </tbody>
+    </table>
+    
+    <h2>Update User</h2>
+    <form id="updateForm">
+        <input type="hidden" id="userId">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username">
+        
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email">
+        
+        <label for="currentPassword">Current Password:</label>
+        <input type="password" id="currentPassword" name="currentPassword">
+        
+        <label for="newPassword">New Password:</label>
+        <input type="password" id="newPassword" name="newPassword">
+        
+        <label for="confirmNewPassword">Confirm New Password:</label>
+        <input type="password" id="confirmNewPassword" name="confirmNewPassword">
+        
+        <input type="submit" value="Update">
+        <div class="loading">Updating...</div>
+    </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('You must log in first.');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Fetch user data on page load
+            fetch('data_management.php', {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(response => response.json())
+            .then(result => {
+                const userTable = document.getElementById('userTable').getElementsByTagName('tbody')[0];
+                if (result.status === 200) {
+                    result.data.forEach(user => {
+                        const row = userTable.insertRow();
+                        row.insertCell(0).textContent = user.id;
+                        row.insertCell(1).textContent = user.username;
+                        row.insertCell(2).textContent = user.email;
+                        
+                        const actionCell = row.insertCell(3);
+                        const editButton = document.createElement('span');
+                        editButton.textContent = 'Edit';
+                        editButton.className = 'edit-btn';
+                        editButton.dataset.id = user.id; // Store user ID in data attribute
+                        actionCell.appendChild(editButton);
+                    });
+                } else {
+                    userTable.innerHTML = `<tr><td colspan="4">Error: ${result.message}</td></tr>`;
+                }
+            })
+            .catch(error => {
+                document.getElementById('userTable').innerHTML = `<tr><td colspan="4">An error occurred: ${error.message}</td></tr>`;
+            });
+        });
+
+        document.getElementById('userTable').addEventListener('click', function(event) {
+            if (event.target.classList.contains('edit-btn')) {
+                const row = event.target.closest('tr');
+                const id = event.target.dataset.id;
+                const username = row.cells[1].textContent;
+                const email = row.cells[2].textContent;
+                
+                document.getElementById('userId').value = id;
+                document.getElementById('username').value = username;
+                document.getElementById('email').value = email;
+                
+                // Optionally, store user ID in form or somewhere else if needed
+            }
+        });
+
+        document.getElementById('updateForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the default form submission
+
+            const token = localStorage.getItem('token'); // Get token from local storage
+            if (!token) {
+                alert('You must log in first.');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const id = document.getElementById('userId').value;
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+
+            // Simple client-side validation
+            if (newPassword !== confirmNewPassword) {
+                alert('New passwords do not match.');
+                return;
+            }
+
+            const loading = document.querySelector('.loading');
+            loading.style.display = 'block';
+
+            fetch('data_management.php', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ id, username, email, currentPassword, newPassword })
+            })
+            .then(response => response.json())
+            .then(result => {
+                loading.style.display = 'none';
+                if (result.status === 200) {
+                    alert('User data updated successfully.');
+                    window.location.reload(); // Reload page to refresh user data
+                } else {
+                    alert(`Error: ${result.message}`);
+                }
+            })
+            .catch(error => {
+                loading.style.display = 'none';
+                alert('An error occurred: ' + error.message);
+            });
+        });
+    </script>
+</body>
+</html>

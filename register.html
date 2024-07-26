@@ -5,52 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        form {
-            max-width: 400px;
-            margin: auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            position: relative;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-        }
-        input[type="text"], input[type="email"], input[type="password"], input[type="submit"] {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 10px;
-            box-sizing: border-box;
-        }
-        input[type="submit"] {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        input[type="submit"]:hover {
-            background-color: #45a049;
-        }
-        .error {
-            color: red;
-            margin-bottom: 10px;
-        }
-        .success {
-            color: green;
-            margin-bottom: 10px;
-        }
-        .loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            display: none;
-        }
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        form { max-width: 400px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        label { display: block; margin-bottom: 8px; }
+        input[type="text"], input[type="email"], input[type="password"], input[type="submit"] { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box; }
+        input[type="submit"] { background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        input[type="submit"]:hover { background-color: #45a049; }
+        .error { color: red; margin-bottom: 10px; }
+        .success { color: green; margin-bottom: 10px; }
+        .loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; }
     </style>
 </head>
 <body>
@@ -75,42 +38,31 @@
         document.getElementById('registerForm').addEventListener('submit', function(event) {
             event.preventDefault(); // Prevent the default form submission
             
-            // Retrieve form values
             const username = document.getElementById('username').value;
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
-            // Display loading indicator
             const loading = document.querySelector('.loading');
             loading.style.display = 'block';
 
-            // Prepare the request
-            fetch('register.php', { // Adjust the URL to your PHP script
+            fetch('register.php', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ username: username, email: email, password: password })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, password })
             })
             .then(response => response.json())
             .then(result => {
-                // Hide loading indicator
                 loading.style.display = 'none';
-
-                // Display response message
                 const responseMessage = document.getElementById('responseMessage');
                 if (result.status === 200) {
                     responseMessage.innerHTML = `<p class="success">Registration successful!</p>`;
-                    document.getElementById('registerForm').reset(); // Reset form fields
+                    document.getElementById('registerForm').reset();
                 } else {
                     responseMessage.innerHTML = `<p class="error">Error: ${result.message}</p>`;
                 }
             })
             .catch(error => {
-                // Hide loading indicator
                 loading.style.display = 'none';
-
-                // Display error message
                 const responseMessage = document.getElementById('responseMessage');
                 responseMessage.innerHTML = `<p class="error">An error occurred: ${error.message}</p>`;
             });

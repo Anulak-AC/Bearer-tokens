@@ -9,12 +9,13 @@ $dbPath = __DIR__ . '/database.db'; // Path to SQLite database file
 try {
     $db = new SQLite3($dbPath);
 } catch (Exception $e) {
-    die('Database connection failed: ' . $e->getMessage());
+    sendJsonResponse(500, 'Database connection failed');
 }
 
 // Function to send a JSON response
 function sendJsonResponse($status, $message, $data = null) {
     header('Content-Type: application/json');
+    http_response_code($status);
     echo json_encode(['status' => $status, 'message' => $message, 'data' => $data]);
     exit;
 }
@@ -38,6 +39,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         sendJsonResponse(400, 'All fields are required');
     }
     
+    // Validate email format
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        sendJsonResponse(400, 'Invalid email format');
+    }
+    
     // Hash the password before storing it
     $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
 
@@ -52,9 +58,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     try {
         // Execute query
         $result = $stmt->execute();
-        sendJsonResponse(200, 'Registration successful');
+        sendJsonResponse(200, 'Registration successful', $result  );
     } catch (Exception $e) {
-        sendJsonResponse(500, 'Database error: ' . $e->getMessage());
+        sendJsonResponse(500, 'Database error');
     }
 } else {
     sendJsonResponse(405, 'Method Not Allowed');
